@@ -1,24 +1,24 @@
+////
+////  ContentView.swift
+////  SystemInfoTracker
+////
+////  Created by Gaurav Nikam on 19/04/26.
+////
 //
-//  ContentView.swift
-//  SystemInfoTracker
+//import SwiftUI
 //
-//  Created by Gaurav Nikam on 19/04/26.
+//struct ContentView: View {
+//    var body: some View {
+//        VStack {
+//            Image(systemName: "globe")
+//                .imageScale(.large)
+//                .foregroundStyle(.tint)
+//            Text("Hello, world!")
+//        }
+//        .padding()
+//    }
+//}
 //
-
-import SwiftUI
-
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
-
-#Preview {
-    ContentView()
-}
+//#Preview {
+//    ContentView()
+//}
