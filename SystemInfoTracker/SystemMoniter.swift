@@ -1,11 +1,12 @@
 import Foundation
 import Combine
 
-// 1. Ensure the class is an ObservableObject
 class SystemMonitor: ObservableObject {
-    // 2. Mark the variable as @Published so the UI updates
     @Published var cpuUsage: Double = 0.0
     
+    // Store the previous state of ticks
+    private var previousTicks = host_cpu_load_info()
+    private var hasPreviousState = false
     private var timer: Timer?
 
     init() {
@@ -13,31 +14,46 @@ class SystemMonitor: ObservableObject {
     }
 
     func startMonitoring() {
-        // Use [weak self] to prevent memory leaks with the timer
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
+            let usage = self.calculateCPUPercentage()
             
-            // For testing, we'll keep the random number
-            // In a real app, you'd call your C-function here
-            self.cpuUsage = getCPUUsage()
+            DispatchQueue.main.async {
+                self.cpuUsage = usage
+            }
         }
     }
-    
-    func getCPUUsage() -> Double {
-        var cpuLoad = host_cpu_load_info()
+
+    private func calculateCPUPercentage() -> Double {
+        var resultStats = host_cpu_load_info()
         var count = UInt32(MemoryLayout<host_cpu_load_info_data_t>.size / MemoryLayout<integer_t>.size)
         
-        let result = withUnsafeMutablePointer(to: &cpuLoad) {
+        let result = withUnsafeMutablePointer(to: &resultStats) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
                 host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &count)
             }
         }
-        
-        if result != KERN_SUCCESS { return 0.0 }
-        
-        // Note: To get a percentage, you must subtract the previous
-        // total ticks from the current ticks.
-        let totalTicks = cpuLoad.cpu_ticks.0 + cpuLoad.cpu_ticks.1 + cpuLoad.cpu_ticks.2 + cpuLoad.cpu_ticks.3
-        return Double(totalTicks) // Simplified for brevity
+
+        guard result == KERN_SUCCESS else { return 0.0 }
+
+        if !hasPreviousState {
+            previousTicks = resultStats
+            hasPreviousState = true
+            return 0.0
+        }
+
+        // Calculate deltas for each tick type
+        let userDiff = Double(resultStats.cpu_ticks.0 - previousTicks.cpu_ticks.0)
+        let systemDiff = Double(resultStats.cpu_ticks.1 - previousTicks.cpu_ticks.1)
+        let idleDiff = Double(resultStats.cpu_ticks.2 - previousTicks.cpu_ticks.2)
+        let niceDiff = Double(resultStats.cpu_ticks.3 - previousTicks.cpu_ticks.3)
+
+        let totalDiff = userDiff + systemDiff + idleDiff + niceDiff
+        let activeDiff = userDiff + systemDiff + niceDiff
+
+        // Store current for next calculation
+        previousTicks = resultStats
+
+        return totalDiff > 0 ? (activeDiff / totalDiff) * 100.0 : 0.0
     }
 }
