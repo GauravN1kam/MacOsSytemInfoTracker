@@ -3,6 +3,7 @@ import Combine
 
 class SystemMonitor: ObservableObject {
     @Published var cpuUsage: Double = 0.0
+    @Published var ramUsage: Double = 0.0
     
     // Store the previous state of ticks
     private var previousTicks = host_cpu_load_info()
@@ -16,10 +17,13 @@ class SystemMonitor: ObservableObject {
     func startMonitoring() {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            let usage = self.calculateCPUPercentage()
+            
+            let cpu = self.calculateCPUPercentage()
+            let ram = self.getMemoryUsage() // Don't forget to call it!
             
             DispatchQueue.main.async {
-                self.cpuUsage = usage
+                self.cpuUsage = cpu
+                self.ramUsage = ram
             }
         }
     }
@@ -55,5 +59,31 @@ class SystemMonitor: ObservableObject {
         previousTicks = resultStats
 
         return totalDiff > 0 ? (activeDiff / totalDiff) * 100.0 : 0.0
+    }
+    
+    func getMemoryUsage() -> Double {
+        var stats = vm_statistics64()
+        var count = UInt32(MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
+        
+        let result = withUnsafeMutablePointer(to: &stats) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+            }
+        }
+        
+        guard result == KERN_SUCCESS else { return 0.0 }
+        
+        let pageSize = UInt64(vm_kernel_page_size)
+        
+        // Use the correct member names for vm_statistics64
+        let active = UInt64(stats.active_count) * pageSize
+        let inactive = UInt64(stats.inactive_count) * pageSize
+        let wired = UInt64(stats.wire_count) * pageSize  // Note: 'wire_count', not 'wired_count'
+        let compressed = UInt64(stats.compressor_page_count) * pageSize
+        
+        let usedMemory = active + inactive + wired + compressed
+        let totalMemory = ProcessInfo.processInfo.physicalMemory
+        
+        return (Double(usedMemory) / Double(totalMemory)) * 100.0
     }
 }

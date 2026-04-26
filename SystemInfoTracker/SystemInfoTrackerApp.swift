@@ -19,6 +19,9 @@ struct SystemInfoTrackerApp: App {
                 Text("System Health")
                     .font(.headline)
                 Text("CPU Usage: \(Int(monitor.cpuUsage))%")
+                
+                Text("System Ram consumption: \(monitor.ramUsage)")
+                
                 Divider()
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
