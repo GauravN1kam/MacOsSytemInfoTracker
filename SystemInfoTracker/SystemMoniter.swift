@@ -19,8 +19,7 @@ class SystemMonitor: ObservableObject {
             guard let self = self else { return }
             
             let cpu = self.calculateCPUPercentage()
-            let ram = self.getMemoryUsage() // Don't forget to call it!
-            
+            let ram = self.getMemoryUsage()             
             DispatchQueue.main.async {
                 self.cpuUsage = cpu
                 self.ramUsage = ram
