@@ -45,7 +45,6 @@ class SystemMonitor: ObservableObject {
             return 0.0
         }
 
-        // Calculate deltas for each tick type
         let userDiff = Double(resultStats.cpu_ticks.0 - previousTicks.cpu_ticks.0)
         let systemDiff = Double(resultStats.cpu_ticks.1 - previousTicks.cpu_ticks.1)
         let idleDiff = Double(resultStats.cpu_ticks.2 - previousTicks.cpu_ticks.2)
