@@ -35,6 +35,7 @@ struct SystemInfoTrackerApp: App {
                 Text("\(Int(monitor.cpuUsage))%")
             }
         }
-        .menuBarExtraStyle(.window) // Uses a popover style instead of a standard list
-    }
+        .menuBarExtraStyle(.window)
+        }
+
 }
