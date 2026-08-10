@@ -5,7 +5,7 @@ class SystemMonitor: ObservableObject {
     @Published var cpuUsage: Double = 0.0
     @Published var ramUsage: Double = 0.0
     
-    // Store the previous state of ticks
+    // Store the previous state of ticks.
     private var previousTicks = host_cpu_load_info()
     private var hasPreviousState = false
     private var timer: Timer?
