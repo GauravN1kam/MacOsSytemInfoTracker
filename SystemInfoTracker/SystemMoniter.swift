@@ -1,6 +1,8 @@
 import Foundation
 import Combine
 
+// System moniter class
+
 class SystemMonitor: ObservableObject {
     @Published var cpuUsage: Double = 0.0
     @Published var ramUsage: Double = 0.0
